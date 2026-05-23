@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:11-jammy
+    container_name: mariadb_db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: myrootpassword
+      MARIADB_DATABASE: taskdb
+      MARIADB_USER: myuser
+      MARIADB_PASSWORD: mysecretpassword
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - lab2_network
+
+  web:
+    build: ./app
+    container_name: web_app
+    restart: always
+    environment:
+      - DATABASE_URL=mysql+pymysql://myuser:mysecretpassword@db:3306/taskdb
+    depends_on:
+      - db
+    networks:
+      - lab2_network
+
+  nginx:
+    build: ./nginx
+    container_name: nginx_proxy
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    networks:
+      - lab2_network
+
+networks:
+  lab2_network:
+    driver: bridge
+
+volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./db-init:/docker-environment-initdb.d
