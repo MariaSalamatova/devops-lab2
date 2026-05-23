@@ -36,5 +36,7 @@ jobs:
         dockerfile: app/Dockerfile
 
     - name: Run tests with pytest
-      run: |
-        pytest --cov=app --cov-report=term-missing
+   env:
+     PYTHONPATH: .
+   run: |
+     pytest --cov=app --cov-report=term-missing
