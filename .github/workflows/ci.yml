@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: CI/CD Pipeline
 
 on:
   push:
@@ -39,12 +39,45 @@ jobs:
       env:
         PYTHONPATH: .
       run: |
-        # Запуск тестів із генерацією звіту у файл та термінал
         pytest --cov=app --cov-report=term-missing --cov-report=html:coverage_report
 
     - name: Upload coverage report as artifact
       if: always()
-      uses: actions/artifacts-action@v1
+      uses: actions/upload-artifact@v4
       with:
         name: html-coverage-report
         path: coverage_report/
+
+  deploy:
+    needs: lint-and-test
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Deploy application via Docker Compose
+      run: |
+        cd ~/lab2
+        docker compose down
+        docker compose up --build -d
+
+    - name: Verify deployment status
+      run: |
+        echo "Waiting for web-app and nginx to warm up..."
+        sleep 10
+        
+        STATUS_ROOT=$(curl -o /dev/null -s -w "%{http_code}" http://localhost/)
+        if [ "$STATUS_ROOT" -ne 403 ]; then
+          echo "Verification Failed: Root endpoint is not protected! Got status $STATUS_ROOT"
+          exit 1
+        fi
+        
+        STATUS_TASKS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost/tasks)
+        if [ "$STATUS_TASKS" -eq 200 ] || [ "$STATUS_TASKS" -eq 201 ] || [ "$STATUS_TASKS" -eq 500 ]; then
+          echo "Verification Success! Nginx successfully routes requests to backend."
+        else
+          echo "Verification Failed: Backend is unreachable! Got status $STATUS_TASKS"
+          exit 1
+        fi
