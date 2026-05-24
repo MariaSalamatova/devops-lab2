@@ -37,7 +37,7 @@ jobs:
 
     - name: Run tests with pytest and check coverage
       env:
-        PYTHONPATH: .
+        PYTHONPATH: app
       run: |
         pytest --cov=app --cov-report=term-missing --cov-report=html:coverage_report
 
