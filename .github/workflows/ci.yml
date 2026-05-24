@@ -35,8 +35,16 @@ jobs:
       with:
         dockerfile: app/Dockerfile
 
-    - name: Run tests with pytest
-   env:
-     PYTHONPATH: .
-   run: |
-     pytest --cov=app --cov-report=term-missing
+    - name: Run tests with pytest and check coverage
+      env:
+        PYTHONPATH: .
+      run: |
+        # Запуск тестів із генерацією звіту у файл та термінал
+        pytest --cov=app --cov-report=term-missing --cov-report=html:coverage_report
+
+    - name: Upload coverage report as artifact
+      if: always()
+      uses: actions/artifacts-action@v1
+      with:
+        name: html-coverage-report
+        path: coverage_report/
