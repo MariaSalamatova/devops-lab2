@@ -12,6 +12,7 @@ services:
       MARIADB_PASSWORD: mysecretpassword
     volumes:
       - mariadb_data:/var/lib/mysql
+      - ./db-init:/docker-entrypoint-initdb.d
     networks:
       - lab2_network
 
@@ -42,5 +43,4 @@ networks:
     driver: bridge
 
 volumes:
-      - mariadb_data:/var/lib/mysql
-      - ./db-init:/docker-environment-initdb.d
+  mariadb_data:
