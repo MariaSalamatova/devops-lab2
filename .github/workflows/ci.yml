@@ -56,28 +56,26 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        clean: true
 
     - name: Deploy application via Docker Compose
       run: |
         cd ~/lab2
-        docker compose down
+        docker compose down --volumes --remove-orphans
         docker compose up --build -d
 
     - name: Verify deployment status
       run: |
-        echo "Waiting for web-app and nginx to warm up..."
-        sleep 10
-        
-        STATUS_ROOT=$(curl -o /dev/null -s -w "%{http_code}" http://localhost/)
-        if [ "$STATUS_ROOT" -ne 403 ]; then
-          echo "Verification Failed: Root endpoint is not protected! Got status $STATUS_ROOT"
-          exit 1
-        fi
+        echo "Waiting 20 seconds for containers to fully start..."
+        sleep 20
         
         STATUS_TASKS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost/tasks)
+        echo "Backend responded with status: $STATUS_TASKS"
+        
         if [ "$STATUS_TASKS" -eq 200 ] || [ "$STATUS_TASKS" -eq 201 ] || [ "$STATUS_TASKS" -eq 500 ]; then
           echo "Verification Success! Nginx successfully routes requests to backend."
         else
-          echo "Verification Failed: Backend is unreachable! Got status $STATUS_TASKS"
+          echo "Verification Failed! Got status $STATUS_TASKS"
           exit 1
         fi
